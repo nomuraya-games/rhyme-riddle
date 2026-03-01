@@ -2,7 +2,7 @@
 なぞなぞ生成モジュール
 
 目的:
-    Claude APIを使って「XはXでも〇〇なXはなーんだ？」形式の
+    Groq APIを使って「XはXでも〇〇なXはなーんだ？」形式の
     ライミングなぞなぞを生成する。
 
 使い方:
@@ -16,19 +16,22 @@ import os
 import sys
 from pathlib import Path
 
-import anthropic
+from openai import OpenAI
+
+GROQ_BASE_URL = "https://api.groq.com/openai/v1"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 
 def _get_api_key() -> str | None:
-    """環境変数 → vault の順でAnthropicAPIキーを取得する。"""
-    key = os.environ.get("ANTHROPIC_API_KEY")
+    """環境変数 → vault の順でGroq APIキーを取得する。"""
+    key = os.environ.get("GROQ_API_KEY")
     if key:
         return key
     vault_path = Path.home() / "workspace-ai/nomuraya-shelf/vault/credentials.env"
     if vault_path.exists():
         for line in vault_path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
-            if line.startswith("ANTHROPIC_API_KEY="):
+            if line.startswith("GROQ_API_KEY="):
                 return line.split("=", 1)[1].strip()
     return None
 
@@ -76,24 +79,26 @@ def generate_riddles(count: int = 1) -> list[dict]:
     """
     api_key = _get_api_key()
     if not api_key:
-        print("エラー: ANTHROPIC_API_KEY が見つかりません", file=sys.stderr)
-        print("環境変数か vault/credentials.env に設定してください", file=sys.stderr)
+        print("エラー: GROQ_API_KEY が見つかりません", file=sys.stderr)
+        print("~/.zshrc か vault/credentials.env に設定してください", file=sys.stderr)
         sys.exit(1)
 
-    client = anthropic.Anthropic(api_key=api_key)
+    client = OpenAI(api_key=api_key, base_url=GROQ_BASE_URL)
 
     user_message = f"「XはXでも」形式のなぞなぞを{count}問作ってください。"
 
-    print(f"なぞなぞを{count}問生成中...", file=sys.stderr)
+    print(f"なぞなぞを{count}問生成中... (model: {GROQ_MODEL})", file=sys.stderr)
 
-    message = client.messages.create(
-        model="claude-sonnet-4-6",
+    response = client.chat.completions.create(
+        model=GROQ_MODEL,
         max_tokens=1024,
-        system=SYSTEM_PROMPT,
-        messages=[{"role": "user", "content": user_message}],
+        messages=[
+            {"role": "system", "content": SYSTEM_PROMPT},
+            {"role": "user", "content": user_message},
+        ],
     )
 
-    response_text = message.content[0].text
+    response_text = response.choices[0].message.content
     print(f"APIレスポンス:\n{response_text}", file=sys.stderr)
 
     data = json.loads(response_text)
