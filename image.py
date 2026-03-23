@@ -70,40 +70,23 @@ def create_question_image(question: str, output_path: str = "riddle_question.png
         width=4,
     )
 
-    # タイトルラベル
-    title_font = load_font(28, bold=True)
-    title_text = "なぞなぞ"
-    draw_rounded_rect(
-        draw,
-        (60, 45, 200, 90),
-        radius=10,
-        fill=ACCENT_COLOR,
-    )
-    draw.text((80, 52), title_text, font=title_font, fill="white")
-
     # 問題文（折り返し処理）
     question_font = load_font(38)
     max_chars = 18
     lines = textwrap.wrap(question, width=max_chars)
 
     total_height = len(lines) * 55
-    start_y = (IMAGE_HEIGHT - total_height) // 2 + 10
+    start_y = (IMAGE_HEIGHT - total_height) // 2
 
     for i, line in enumerate(lines):
+        bbox = draw.textbbox((0, 0), line, font=question_font)
+        text_width = bbox[2] - bbox[0]
+        x = (IMAGE_WIDTH - text_width) // 2
         y = start_y + i * 55
         # シャドウ
-        draw.text((62, y + 2), line, font=question_font, fill=SHADOW_COLOR)
+        draw.text((x + 2, y + 2), line, font=question_font, fill=SHADOW_COLOR)
         # 本文
-        draw.text((60, y), line, font=question_font, fill=TEXT_COLOR)
-
-    # 下部装飾
-    draw.line(
-        [(60, IMAGE_HEIGHT - 60), (IMAGE_WIDTH - 60, IMAGE_HEIGHT - 60)],
-        fill=BORDER_COLOR,
-        width=2,
-    )
-    hint_font = load_font(22)
-    draw.text((60, IMAGE_HEIGHT - 50), "答えはわかるかな？", font=hint_font, fill=ACCENT_COLOR)
+        draw.text((x, y), line, font=question_font, fill=TEXT_COLOR)
 
     img.save(output_path)
     print(f"問題画像を保存しました: {output_path}")

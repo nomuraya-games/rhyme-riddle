@@ -116,30 +116,24 @@ def _build_article(riddle: dict, cover_syntax: str | None, question_syntax: str 
     question = riddle["question"]
     answer = riddle["answer"]
     explanation = riddle["explanation"]
+    hint = riddle.get("hint")
 
     title = f"なぞなぞ：{question}"
 
     cover_section = f"{cover_syntax}\n\n" if cover_syntax else ""
     question_img_section = f"\n\n{question_syntax}" if question_syntax else ""
+    hint_section = f"\n\n## ヒント\n{hint}\n\n（開くと答えが出ます）" if hint else ""
 
     content = f"""{cover_section}## 問題
 
-{question}{question_img_section}
+{question}{question_img_section}{hint_section}
+
+<!-- more -->
 
 ## 答え
-
-<details>
-<summary>答えはこちら</summary>
-
 **{answer}**
 
 {explanation}
-
-</details>
-
----
-
-*なぞなぞジェネレーター rhyme-riddle で自動生成しました*
 """
     return title, content
 
